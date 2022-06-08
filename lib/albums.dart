@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:developer_test/http/http.dart';
 import 'package:developer_test/models/album.dart';
 import 'package:developer_test/photos.dart';
@@ -40,7 +39,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
 
   void changeShowList(bool show) {
     setState(() {
-      showList = show;
+      showList = !show;
     });
   }
 
@@ -60,6 +59,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
         ),
       ),
       body: Stack(
+        fit: StackFit.passthrough,
         children: [
           Image.asset(
             "assets/alnums_bg.png",
@@ -83,18 +83,34 @@ class _AlbumsPageState extends State<AlbumsPage> {
                 const SizedBox(
                   height: 26,
                 ),
-                AlbumsTitleView((show) {
-                  changeShowList(show);
-                }),
-                Expanded(
+                // AlbumsTitleView((show) {
+                //   changeShowList(show);
+                // }),
+                Flexible(
                   child: AlbumsListView(
                     data,
                     showList,
                     onTap: (index) {
                       onTapCell(context, index);
                     },
+                    switchExpanded: (isExpanded) {
+                      changeShowList(isExpanded);
+                    },
                   ),
                 ),
+                Container(
+                  height: 18,
+                  alignment: Alignment.centerLeft,
+                  margin: const EdgeInsets.fromLTRB(12, 10, 0, 0),
+                  child: const Text(
+                    "Height Indicator",
+                    style: TextStyle(
+                      color: Color(0xFF0500FF),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                )
               ],
             ),
           ),
@@ -110,44 +126,83 @@ class _AlbumsPageState extends State<AlbumsPage> {
 }
 
 class AlbumsListView extends StatefulWidget {
-  const AlbumsListView(this.data, this.show, {required this.onTap, Key? key})
+  const AlbumsListView(this.data, this.show,
+      {required this.onTap, required this.switchExpanded, Key? key})
       : super(key: key);
   final bool show;
   final List<Album> data;
   final Function(int) onTap;
+  final Function(bool) switchExpanded;
   @override
   State<AlbumsListView> createState() => _AlbumsListViewState();
 }
 
 class _AlbumsListViewState extends State<AlbumsListView> {
-  double get opacity {
-    return widget.show ? 1.0 : 0.0;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder(
-      tween: Tween(begin: 1.0, end: opacity),
-      builder: (context, double value, child) {
-        return Opacity(
-          opacity: value,
-          child: ListView.builder(
-            itemCount: widget.data.length,
-            itemBuilder: (itemBuilder, index) {
-              return AlbumsCell(
-                widget.data[index].title ?? "",
-                onTap: () {
-                  if (widget.show) {
-                    widget.onTap(index);
-                  }
-                },
+    return SingleChildScrollView(
+      child: ExpansionPanelList(
+        dividerColor: Colors.transparent,
+        animationDuration: const Duration(milliseconds: 500),
+        expansionCallback: (panelIndex, isExpanded) {
+          widget.switchExpanded(isExpanded);
+        },
+        children: [
+          ExpansionPanel(
+            isExpanded: widget.show,
+            body: ListView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: widget.data.length,
+              itemBuilder: (itemBuilder, index) {
+                return AlbumsCell(
+                  widget.data[index].title ?? "",
+                  onTap: () {
+                    if (widget.show) {
+                      widget.onTap(index);
+                    }
+                  },
+                );
+              },
+            ),
+            headerBuilder: (BuildContext context, bool isExpanded) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: const [
+                  SizedBox(
+                    width: 10,
+                  ),
+                  Text(
+                    "Albums",
+                    style: TextStyle(
+                      color: Color(0xFF464646),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  )
+                ],
               );
             },
-          ),
-        );
-      },
-      duration: const Duration(milliseconds: 500),
+          )
+        ],
+      ),
     );
+    // return Flexible(
+    //   child: ListView.builder(
+    //     shrinkWrap: true,
+    //     itemCount: widget.data.length,
+    //     itemBuilder: (itemBuilder, index) {
+    //       return AlbumsCell(
+    //         widget.data[index].title ?? "",
+    //         onTap: () {
+    //           if (widget.show) {
+    //             widget.onTap(index);
+    //           }
+    //         },
+    //       );
+    //     },
+    //   ),
+    // );
   }
 }
 
